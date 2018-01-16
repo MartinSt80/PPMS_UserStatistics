@@ -1,0 +1,3 @@
+#set to 'PPMS API' for direct calls, requires ProxyOptions.txt
+#set to 'Proxy' for calls over proxy
+calling_mode = PPMS API
