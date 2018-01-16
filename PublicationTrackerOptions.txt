@@ -1,0 +1,7 @@
+# general options
+save_dir = /mnt/BIC-NAS/Publication_Tracker/Publications
+PMID_knownlist = /mnt/BIC-NAS/Publication_Tracker/Publications/PMID_knownlist.txt
+
+# Pubmed API URLs
+getPMIDs = http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi
+getSummary = http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi
