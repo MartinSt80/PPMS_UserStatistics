@@ -19,47 +19,52 @@ class Equipment:
 		get_systems = PPMSAPICalls.NewCall(calling_mode)
 		self.systems = get_systems.getSystems()
 		self.microscope_list = []
+		self.microscope_ids = []
 
 	def addMicroscopes(self):
 		for system in self.systems:
 			system_info = system.split(',')
 			if '"Microscope"' == system_info[2] and 'True' == system_info[5] and not system_info[3].startswith('"CAP'):
 				self.microscope_list.append(Instrument(system_info[1], system_info[3][1:-1], self.instrument_groups[system_info[1]]))
+		for microscope in self.microscope_list:
+			self.microscope_ids.append(microscope.id)
 
+class BICUser:
 
-#
-# class BICUser:
-#
-# 	def __init__(self, login):
-# 		self.login = login
-# 		self.active_instruments = {}
-# 		for key in self.instruments:
-# 			self.active_instruments[key] = False
-# 		self.active_groups = {}
-# 		for key in self.instrument_groups:
-# 			self.active_groups[key] = False
-#
-# 	def setAutonomies(self):
-# 		get_user_rights = PPMSAPICalls.NewCall(calling_mode)
-# 		user_rights = get_user_rights.get
+	def __init__(self, login):
+		self.login = login
+		self.BIC_user = False
+
+	def checkBICUserRights(self):
+		get_user_rights = PPMSAPICalls.NewCall(calling_mode)
+		user_rights = get_user_rights.getUserRights(self.login)
+		for user_right in user_rights:
+			user_right = user_right.split(',')
+			if 'D' != user_right[0] and user_right[1] in microscopes.microscope_ids:
+				self.BIC_user = True
+				break
 
 SYSTEM_OPTIONS = Options.OptionReader('SystemOptions.txt')
 
 #facility_id = SYSTEM_OPTIONS.getValue('PPMS_facilityid')
 #system_id = SYSTEM_OPTIONS.getValue('PPMS_systemid')
 calling_mode = SYSTEM_OPTIONS.getValue('calling_mode')
-#
-# get_active_users = PPMSAPICalls.NewCall(calling_mode)
-# active_users = get_active_users.getAllUsers(True)
-#
-# user_list = []
-#
-# for user_login in active_users:
-# 	user = BICUser(user_login)
-# 	user.setAutonomies()
-
 
 microscopes = Equipment()
 microscopes.addMicroscopes()
-for system in microscopes.microscope_list:
-	print system.id, system.name, system.type
+
+get_active_users = PPMSAPICalls.NewCall(calling_mode)
+active_users = get_active_users.getAllUsers(True)
+
+active_user_count = 0
+
+for user_login in active_users:
+	user = BICUser(user_login)
+	try:
+		user.checkBICUserRights()
+		if user.BIC_user:
+			active_user_count += 1
+	except RuntimeError:
+		pass
+
+print active_user_count
