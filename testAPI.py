@@ -9,12 +9,22 @@ facility_id = SYSTEM_OPTIONS.getValue('PPMS_facilityid')
 system_id = SYSTEM_OPTIONS.getValue('PPMS_systemid')
 calling_mode = SYSTEM_OPTIONS.getValue('calling_mode')
 
-get_systemname = PPMSAPICalls.NewCall(calling_mode)
-system_name = get_systemname.getSystemName(system_id)
-print system_name
 
+get_systems = PPMSAPICalls.NewCall(calling_mode)
+systems = get_systems.getSystems()
+print systems, len(systems)
+exit()
+for i in range(1,50):
+	get_systemname = PPMSAPICalls.NewCall(calling_mode)
+	system_name = get_systemname.getSystemName(i)
+	print system_name, i
+exit()
 get_booking = PPMSAPICalls.NewCall(calling_mode)
 print get_booking.getTodaysBookings(facility_id, system_name)
+
+get_user_rights = PPMSAPICalls.NewCall(calling_mode)
+print get_user_rights.getUserRights('alexander.finke')
+
 
 get_username = PPMSAPICalls.NewCall(calling_mode)
 user_name = get_username.getUserFullName('martin.stoeckl')
