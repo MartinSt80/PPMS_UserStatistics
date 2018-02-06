@@ -76,11 +76,34 @@ class UserResponse:
 			self.needed_softwaresupport = None
 
 		self.impact_evaluation = dict()
-		if response[12] is not '""':
-			self.training_evaluation['training'] = int(response[12].strip('"'))
-		if response[13] is not '""':
-			self.training_evaluation['advice'] = int(response[13].strip('"'))
+		if response[25] is not '""':
+			self.impact_evaluation['importance'] = int(response[25].strip('"'))
+		if response[26] is not '""':
+			self.impact_evaluation['workload'] = int(response[26].strip('"'))
 
+		if response[27] == '"Yes"':
+			self.uses_courses = True
+		else:
+			self.uses_courses = False
+
+		self.course_evaluation = dict()
+		if response[28] is not '""':
+			self.course_evaluation['microscopy_clarity'] = int(response[28].strip('"'))
+		if response[29] is not '""':
+			self.course_evaluation['microscopy_helpful'] = int(response[29].strip('"'))
+		if response[31] is not '""':
+			self.course_evaluation['imageanalysis_prepared'] = int(response[31].strip('"'))
+		if response[32] is not '""':
+			self.course_evaluation['imageanalysis_helpful'] = int(response[32].strip('"'))
+
+		if response[30] == '"Yes"':
+			self.recommend_microscopy_course = True
+		else:
+			self.recommend_microscopy_course = False
+		if response[33] == '"Yes"':
+			self.recommend_imageanalysis_course = True
+		else:
+			self.recommend_imageanalysis_course = False
 
 
 
