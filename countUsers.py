@@ -40,7 +40,7 @@ class Equipment:
 		self._get_bic_microscopes()
 
 	def _get_system_status(self, system_id):
-		sys_stat = 'Unknown'
+		sys_stat = None
 		if system_id in self._central_microscope_ids:
 			sys_stat = 'central'
 		if system_id in self._decentral_microscope_ids:
@@ -60,12 +60,13 @@ class Equipment:
 			system_type = ppms_system_info[2][start_index + 1: stop_index]
 			system_status = self._get_system_status(int(ppms_system_info[1]))
 
-			microscope = Instrument(ppms_system_info[1],
-									ppms_system_info[3].strip('"'),
-									system_type,
-									system_status
-									)
-			return microscope
+			if system_status:
+				microscope = Instrument(ppms_system_info[1],
+										ppms_system_info[3].strip('"'),
+										system_type,
+										system_status,
+										)
+				return microscope
 
 	def _get_bic_microscopes(self):
 
