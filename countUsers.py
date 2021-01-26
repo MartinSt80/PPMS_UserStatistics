@@ -31,52 +31,35 @@ class Timer(object):
 
 class Equipment:
 
-	_central_microscope_ids = [3, 5, 7, 14, 17, 18, 58]
-	_decentral_microscope_ids = [6, 16, 56, 57]
-	_external_tracked_microscope_ids = [29, 60]
-
-	def __init__(self):
+	def __init__(self, facility_microsopes):
 		self.microscope_list = []
-		self._get_bic_microscopes()
+		self._get_facility_microscopes(facility_microsopes)
 
-	def _get_system_status(self, system_id):
-		sys_stat = None
-		if system_id in self._central_microscope_ids:
-			sys_stat = 'central'
-		if system_id in self._decentral_microscope_ids:
-			sys_stat = 'decentral'
-		if system_id in self._external_tracked_microscope_ids:
-			sys_stat = 'external'
-		return sys_stat
+	def _get_facility_microscopes(self, facility_mic_dict):
 
-	def _identify_microscopes(self, ppms_system_string):
-		ppms_system_info = ppms_system_string.split(',')
-
-		# check if system is a microscope, and if it is active
-		if 'Microscope' in ppms_system_info[2] and 'True' == ppms_system_info[5]:
-			start_index = ppms_system_info[2].index('(')
-			stop_index = ppms_system_info[2].index(')')
-
-			system_type = ppms_system_info[2][start_index + 1: stop_index]
-			system_status = self._get_system_status(int(ppms_system_info[1]))
-
-			if system_status:
-				microscope = Instrument(ppms_system_info[1],
-										ppms_system_info[3].strip('"'),
-										system_type,
-										system_status,
-										)
-				return microscope
-
-	def _get_bic_microscopes(self):
-
+		# get a list of all system ids from PPMS
 		ppms_system_call = PPMSAPICalls.NewCall(calling_mode)
 		ppms_system_list = ppms_system_call.getSystems()
 
-		for system in ppms_system_list:
-			instrument = self._identify_microscopes(system)
-			if instrument:
-				self.microscope_list.append(instrument)
+		for ppms_system_string in ppms_system_list:
+			ppms_system_info = ppms_system_string.split(',')
+
+			# Check if system is a microscope, and if it is active
+			if 'Microscope' in ppms_system_info[2] and 'True' == ppms_system_info[5]:
+
+				# Microscopes always have the PPMS system type 'Microscope (<System type>)'
+				start_index = ppms_system_info[2].index('(')
+				stop_index = ppms_system_info[2].index(')')
+				system_type = ppms_system_info[2][start_index + 1: stop_index]
+
+				# Check if the microscope is in the list we want as output
+				if ppms_system_info[1] in facility_mic_dict:
+					microscope = Microscope(ppms_system_info[1],
+											ppms_system_info[3].strip('"'),
+											system_type,
+											facility_mic_dict[ppms_system_info[1]],
+											)
+					self.microscope_list.append(microscope)
 
 	def microscope_list_with_user_rights(self, login):
 		user_right_list = []
@@ -86,7 +69,7 @@ class Equipment:
 		return user_right_list
 
 
-class Instrument:
+class Microscope:
 
 	def __init__(self, id, name, type, status):
 		self.id = id
@@ -102,7 +85,7 @@ class Instrument:
 		user_rights_call = PPMSAPICalls.NewCall(calling_mode)
 		user_rights = user_rights_call.getUserRights(system_id=self.id)
 
-		login_list =[]
+		login_list = []
 		for user_right in user_rights:
 			user_right = user_right.split(',')
 			if ('D' != user_right[0]) and ('.' in user_right[1]):
@@ -250,7 +233,6 @@ class ActiveBICUsers:
 		return sum([user.get_training_years(year) for user in user_list])
 
 
-
 class BICUser:
 
 	def __init__(self, login, user_rights_for_microscopes, last_usage_date, training_year_list):
@@ -294,6 +276,18 @@ class Group:
 		full_group_info = group_info_call.getGroupFullInfo(self.id)
 		return full_group_info['unitbcode'], full_group_info['unitname'], full_group_info['department']
 
+def get_facility_microscopes(file_path):
+
+	with open(file_path, 'r') as f:
+		microscope_lines = f.readlines()
+
+	microscopes = dict()
+	for microscope_line in microscope_lines:
+		microscope_line = microscope_line.strip()
+		if (not microscope_line.startswith('#')) and microscope_line:
+			microscope_id, microscope_status = microscope_line.split(',')
+			microscopes[microscope_id] = microscope_status
+	return microscopes
 
 def print_microscope_users(microscope_list):
 	print('Microscope statistics:')
@@ -334,7 +328,7 @@ def print_facility_statistics(bic_equipment, active_users=None):
 		  f'FB Phy: {active_users.number_of_users("phy")}')
 	print('--------------------')
 	print('Facility statistics:')
-	year = 2019
+	year = 2020
 	print(f'The facility has given {active_users.number_of_trainings(year)} trainings in {year}.')
 	print(f'FB Bio: {active_users.number_of_trainings(year, "bio")}, '
 		  f'FB Che: {active_users.number_of_trainings(year, "che")}, '
@@ -344,14 +338,21 @@ def print_facility_statistics(bic_equipment, active_users=None):
 SYSTEM_OPTIONS = Options.OptionReader('SystemOptions.txt')
 calling_mode = SYSTEM_OPTIONS.getValue('calling_mode')
 
+facility_microscope_list = get_facility_microscopes('MicroscopeList.txt')
+
+
 with Timer('Getting facility system info from PPMS...', 'Microscope list populated!'):
-	equipment = Equipment()
+	equipment = Equipment(facility_microscope_list)
+
+for microscope in equipment.microscope_list:
+	print(microscope.id, microscope.name, microscope.type, microscope.status, microscope.unfiltered_login_list)
+exit()
 
 with Timer('Getting active users from PPMS...', 'Active user list populated!'):
 	active_bic_users = ActiveBICUsers(equipment)
 
-#print_microscope_users(equipment.microscope_list)
-#print_user_info(active_bic_users.user_list)
+print_microscope_users(equipment.microscope_list)
+print_user_info(active_bic_users.user_list)
 print_facility_statistics(equipment, active_bic_users)
 
 
