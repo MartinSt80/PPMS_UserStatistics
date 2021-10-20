@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8
 
+
+# TODO: User die nur assisted sessions hatten, fallen durchs Raster, da keine Nutzerrechte vorhanden sind
+# TODO: Überprüfen: Nutzer ohne "last usage" Eintrag
+
 import time
 from datetime import datetime, timedelta
 
@@ -39,42 +43,42 @@ class Equipment:
 		self.microscope_list = []
 		self._get_bic_microscopes()
 
-	def _get_system_status(self, system_id):
-		sys_stat = None
-		if system_id in self._central_microscope_ids:
-			sys_stat = 'central'
-		if system_id in self._decentral_microscope_ids:
-			sys_stat = 'decentral'
-		if system_id in self._external_tracked_microscope_ids:
-			sys_stat = 'external'
-		return sys_stat
-
-	def _identify_microscopes(self, ppms_system_string):
-		ppms_system_info = ppms_system_string.split(',')
-
-		# check if system is a microscope, and if it is active
-		if 'Microscope' in ppms_system_info[2] and 'True' == ppms_system_info[5]:
-			start_index = ppms_system_info[2].index('(')
-			stop_index = ppms_system_info[2].index(')')
-
-			system_type = ppms_system_info[2][start_index + 1: stop_index]
-			system_status = self._get_system_status(int(ppms_system_info[1]))
-
-			if system_status:
-				microscope = Instrument(ppms_system_info[1],
-										ppms_system_info[3].strip('"'),
-										system_type,
-										system_status,
-										)
-				return microscope
-
 	def _get_bic_microscopes(self):
+
+		def get_system_status(system_id):
+			sys_stat = None
+			if system_id in self._central_microscope_ids:
+				sys_stat = 'central'
+			if system_id in self._decentral_microscope_ids:
+				sys_stat = 'decentral'
+			if system_id in self._external_tracked_microscope_ids:
+				sys_stat = 'external'
+			return sys_stat
+
+		def identify_microscopes(ppms_system_string):
+			ppms_system_info = ppms_system_string.split(',')
+
+			# check if system is a microscope, and if it is active
+			if 'Microscope' in ppms_system_info[2] and 'True' == ppms_system_info[5]:
+				start_index = ppms_system_info[2].index('(')
+				stop_index = ppms_system_info[2].index(')')
+
+				system_type = ppms_system_info[2][start_index + 1: stop_index]
+				system_status = get_system_status(int(ppms_system_info[1]))
+
+				if system_status:
+					new_microscope = Instrument(ppms_system_info[1],
+											ppms_system_info[3].strip('"'),
+											system_type,
+											system_status,
+											)
+					return new_microscope
 
 		ppms_system_call = PPMSAPICalls.NewCall(calling_mode)
 		ppms_system_list = ppms_system_call.getSystems()
 
 		for system in ppms_system_list:
-			instrument = self._identify_microscopes(system)
+			instrument = identify_microscopes(system)
 			if instrument:
 				self.microscope_list.append(instrument)
 
@@ -250,7 +254,6 @@ class ActiveBICUsers:
 		return sum([user.get_training_years(year) for user in user_list])
 
 
-
 class BICUser:
 
 	def __init__(self, login, user_rights_for_microscopes, last_usage_date, training_year_list):
@@ -334,12 +337,14 @@ def print_facility_statistics(bic_equipment, active_users=None):
 		  f'FB Phy: {active_users.number_of_users("phy")}')
 	print('--------------------')
 	print('Facility statistics:')
-	year = 2019
+	year = 2020
 	print(f'The facility has given {active_users.number_of_trainings(year)} trainings in {year}.')
 	print(f'FB Bio: {active_users.number_of_trainings(year, "bio")}, '
 		  f'FB Che: {active_users.number_of_trainings(year, "che")}, '
 		  f'FB Phy: {active_users.number_of_trainings(year, "phy")}')
 	print('--------------------')
+
+
 
 SYSTEM_OPTIONS = Options.OptionReader('SystemOptions.txt')
 calling_mode = SYSTEM_OPTIONS.getValue('calling_mode')
@@ -350,8 +355,8 @@ with Timer('Getting facility system info from PPMS...', 'Microscope list populat
 with Timer('Getting active users from PPMS...', 'Active user list populated!'):
 	active_bic_users = ActiveBICUsers(equipment)
 
-#print_microscope_users(equipment.microscope_list)
-#print_user_info(active_bic_users.user_list)
+print_microscope_users(equipment.microscope_list)
+print_user_info(active_bic_users.user_list)
 print_facility_statistics(equipment, active_bic_users)
 
 

@@ -80,14 +80,12 @@ save_dir = os.path.join(OPTIONS.getValue('save_dir'), year)
 if not os.path.isdir(save_dir):
 	os.mkdir(save_dir)
 
+# read list of already downloaded references, to be skipped
 with open(OPTIONS.getValue('PMID_knownlist'), 'r') as knownlist:
 	PMID_known = knownlist.readlines()
 PMID_known = [PMID.strip('\n') for PMID in PMID_known]
 
-#with open(OPTIONS.getValue('list_of_authors'), 'r') as authorlist:
-#	authors = authorlist.readlines()
-#authors = [au.strip('\n') for au in authors]
-
+# from the PPMS database retrieve group PIs and users belonging to that group, query Pubmed for publications authored by PI and each user
 new_publications = []
 
 get_groups = PPMSAPICalls.NewCall('PPMS API')
@@ -126,6 +124,7 @@ for group in group_list:
 
 					with open(OPTIONS.getValue('PMID_knownlist'), 'a') as knownlist:
 						knownlist.write(PMID + '\n')
+					PMID_known.append(PMID)
 					new_publications.append(Publication(authorlist[-1], authorlist[0], PMID, RIS_bibliography.getItems('doi')[0]))
 		except:
 			pass
