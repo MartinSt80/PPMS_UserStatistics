@@ -1,0 +1,18 @@
+# Microscopes are listed as: ppms_id, microscope_status
+# 'central', microscope is located in a BIC lab
+# 'decentral', microscope is managed by the BIC, but in a workgroup lab
+# 'external',  microscope is managed by a  research group, usage is tracked by BIC
+
+3,central
+5,central
+7,central
+14,central
+17,central
+18,central
+58,central
+6,decentral
+16,decentral
+56,decentral
+57,decentral
+29,external
+60,external
