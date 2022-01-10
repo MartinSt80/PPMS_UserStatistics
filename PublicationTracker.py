@@ -12,9 +12,6 @@ import unidecode
 
 from lib import Options, PPMSAPICalls, Reporting
 
-reload(sys)
-sys.setdefaultencoding('utf-8')
-
 
 class Publication:
 
@@ -93,9 +90,12 @@ group_list = get_groups.getGroupList()
 
 for group in group_list:
 	get_groupPI = PPMSAPICalls.NewCall('PPMS API')
-	group_head = unidecode.unidecode(get_groupPI.getGroupPI(group))
-	get_user_API = PPMSAPICalls.NewCall('PPMS API')
-	users = get_user_API.getGroupUsers(group)
+	try:
+		group_head = unidecode.unidecode(get_groupPI.getGroupPI(group))
+		get_user_API = PPMSAPICalls.NewCall('PPMS API')
+		users = get_user_API.getGroupUsers(group)
+	except Exception:
+		pass
 
 	for user in users:
 		try:
